@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+---
+builds:
+  - id: default
+    main: "./main.go"
+    binary: ohmygosh
+    ldflags:
+      - -s
+      - -w
+      - -X github.com/tsukinoko-kun/ohmygosh/internal/metadata.Version={{.Version}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - id: default
+    builds: [default]
+    format: tar.gz
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: false
+    mod_timestamp: "{{.CommitTimestamp}}"
+
+brews:
+  - name: ohmygosh
+    homepage: https://github.com/tsukinoko-kun/ohmygosh
+    description: Interactive shell written in Go with a UI inspired by Warp
+    license: MIT
+    dependencies:
+      - git
+    repository:
+      owner: tsukinoko-kun
+      name: homebrew-tap
+    commit_author:
+      name: tsukinoko-kun
+      email: gh@frankmayer.dev
