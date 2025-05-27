@@ -35,11 +35,13 @@ type Cell struct {
 
 // Buffer represents a 2D grid of cells with cursor tracking
 type Buffer struct {
-	cells        [][]Cell
-	cursorRow    int
-	cursorCol    int
-	currentStyle string
-	softWrap     int
+	cells          [][]Cell
+	cursorRow      int
+	cursorCol      int
+	savedCursorRow int
+	savedCursorCol int
+	currentStyle   string
+	softWrap       int
 }
 
 // NewBuffer creates a new buffer
@@ -133,12 +135,16 @@ func CompileAnsi(input string) string {
 	for _, token := range tokens {
 		switch t := token.(type) {
 		case RuneToken:
-			if t.Rune == '\n' {
+			switch t.Rune {
+			case '\n':
 				buffer.cursorRow++
 				buffer.cursorCol = 0
-			} else if t.Rune == '\r' {
+			case '\r':
 				buffer.cursorCol = 0
-			} else {
+			case '\b':
+				buffer.writeRune(' ')
+				buffer.cursorCol = max(0, buffer.cursorCol-1)
+			default:
 				buffer.writeRune(t.Rune)
 			}
 		case AnsiToken:
@@ -166,8 +172,6 @@ func processAnsiSequence(buffer *Buffer, sequence string) {
 	params := content[:len(content)-1]
 
 	switch cmd {
-	case 'H': // Cursor position
-		handleCursorPosition(buffer, params)
 	case 'A': // Cursor up
 		handleCursorUp(buffer, params)
 	case 'B': // Cursor down
@@ -176,12 +180,31 @@ func processAnsiSequence(buffer *Buffer, sequence string) {
 		handleCursorForward(buffer, params)
 	case 'D': // Cursor backward
 		handleCursorBackward(buffer, params)
+	case 'E': // Cursor next line
+		handleCursorNextLine(buffer, params)
+	case 'F': // Cursor previous line
+		handleCursorPreviousLine(buffer, params)
+	case 'G': // Cursor horizontal absolute
+		handleCursorHorizontalAbsolute(buffer, params)
+	case 'H', 'f': // Cursor position
+		handleCursorPosition(buffer, params)
+	case 's': // Save cursor position
+		buffer.savedCursorRow = buffer.cursorRow
+		buffer.savedCursorCol = buffer.cursorCol
+	case 'u': // Restore cursor position
+		buffer.setCursor(buffer.savedCursorRow, buffer.savedCursorCol)
 	case 'J': // Erase in display
 		handleEraseInDisplay(buffer, params)
 	case 'K': // Erase in line
 		handleEraseInLine(buffer, params)
 	case 'm': // SGR (styling)
 		handleStyling(buffer, sequence)
+	case 'n': // DSR (Device Status Report)
+		break
+	case 'l': // DEC Private Mode Reset
+		break
+	case 'h': // DEC Private Mode Set
+		break
 	default:
 		// For unknown sequences, check if they might be styling
 		if isStylingSequence(sequence) {
@@ -257,6 +280,39 @@ func handleCursorBackward(buffer *Buffer, params string) {
 		}
 	}
 	buffer.setCursor(buffer.cursorRow, buffer.cursorCol-n)
+}
+
+// handleCursorNextLine moves cursor down
+func handleCursorNextLine(buffer *Buffer, params string) {
+	n := 1
+	if params != "" {
+		if parsed, err := strconv.Atoi(params); err == nil {
+			n = parsed
+		}
+	}
+	buffer.setCursor(buffer.cursorRow+n, buffer.cursorCol)
+}
+
+// handleCursorPreviousLine moves cursor up
+func handleCursorPreviousLine(buffer *Buffer, params string) {
+	n := 1
+	if params != "" {
+		if parsed, err := strconv.Atoi(params); err == nil {
+			n = parsed
+		}
+	}
+	buffer.setCursor(buffer.cursorRow-n, buffer.cursorCol)
+}
+
+// handleCursorHorizontalAbsolute moves cursor to the specified column
+func handleCursorHorizontalAbsolute(buffer *Buffer, params string) {
+	n := 1
+	if params != "" {
+		if parsed, err := strconv.Atoi(params); err == nil {
+			n = parsed
+		}
+	}
+	buffer.setCursor(buffer.cursorRow, n-1)
 }
 
 // handleEraseInDisplay erases the display

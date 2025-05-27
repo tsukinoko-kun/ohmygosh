@@ -213,19 +213,19 @@ func ExecuteCommandFullScreen(cmd string, id int) (*CommandBlock, tea.Cmd) {
 	})
 }
 
+// Common alt screen sequences:
+// \x1b[?1049h - Enter alt screen (used by modern terminals)
+// \x1b[?47h   - Enter alt screen (older)
+// \x1b[2J     - Clear screen (often used by TUI apps)
+// \x1b[H      - Home cursor (often combined with clear)
+var altScreenSequences = []string{
+	"\x1b[?1049h",   // Modern alt screen
+	"\x1b[?47h",     // Older alt screen
+	"\x1b[2J\x1b[H", // Clear screen + home (common TUI pattern)
+}
+
 // detectAltScreen checks if the output contains alt screen escape sequences
 func detectAltScreen(output string) bool {
-	// Common alt screen sequences:
-	// \x1b[?1049h - Enter alt screen (used by modern terminals)
-	// \x1b[?47h   - Enter alt screen (older)
-	// \x1b[2J     - Clear screen (often used by TUI apps)
-	// \x1b[H      - Home cursor (often combined with clear)
-	altScreenSequences := []string{
-		"\x1b[?1049h",   // Modern alt screen
-		"\x1b[?47h",     // Older alt screen
-		"\x1b[2J\x1b[H", // Clear screen + home (common TUI pattern)
-	}
-
 	for _, seq := range altScreenSequences {
 		if strings.Contains(output, seq) {
 			return true
