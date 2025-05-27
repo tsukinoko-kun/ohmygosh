@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/tsukinoko-kun/ohmygosh/internal/term"
 )
 
 // Token represents either a rune or an ANSI escape sequence
@@ -37,6 +39,7 @@ type Buffer struct {
 	cursorRow    int
 	cursorCol    int
 	currentStyle string
+	softWrap     int
 }
 
 // NewBuffer creates a new buffer
@@ -46,6 +49,7 @@ func NewBuffer() *Buffer {
 		cursorRow:    0,
 		cursorCol:    0,
 		currentStyle: "",
+		softWrap:     int(term.Cols),
 	}
 }
 
@@ -326,6 +330,11 @@ func renderBuffer(buffer *Buffer) string {
 
 		for colIndex := 0; colIndex <= lastNonEmpty; colIndex++ {
 			cell := row[colIndex]
+
+			if colIndex != 0 && colIndex%buffer.softWrap == 0 {
+				result.WriteString("\n")
+				lastStyle = ""
+			}
 
 			// Apply style changes
 			if cell.Style != lastStyle {

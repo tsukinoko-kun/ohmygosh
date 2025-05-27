@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -59,6 +60,16 @@ var (
 var Get Config
 
 var Environ []string
+
+func SetEnviron(key string, value string) {
+	for i, e := range Environ {
+		if strings.HasPrefix(e, key+"=") {
+			Environ[i] = key + "=" + os.ExpandEnv(value)
+			return
+		}
+	}
+	Environ = append(Environ, key+"="+os.ExpandEnv(value))
+}
 
 func Default() Config {
 	shell := GetSystemShell()

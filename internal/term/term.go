@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/tsukinoko-kun/ohmygosh/internal/paths"
 )
 
 var (
 	hostname string
+	Cols     uint16
 )
 
 func init() {
@@ -17,6 +19,11 @@ func init() {
 	hostname, err = os.Hostname()
 	if err != nil {
 		hostname = "localhost"
+	}
+	if cols, err := strconv.Atoi(os.Getenv("COLUMNS")); err == nil {
+		Cols = uint16(cols)
+	} else {
+		Cols = uint16(80)
 	}
 }
 
