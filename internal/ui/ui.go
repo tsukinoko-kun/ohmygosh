@@ -306,6 +306,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Global keybindings
 		switch msg.String() {
+		case "ctrl+c":
+			// Cancel all running commands
+			for _, block := range m.Commands {
+				if block.IsRunning {
+					_ = commands.TerminateCommand(block.Cmd)
+				}
+			}
 		case "enter":
 			if cmd := strings.TrimSpace(m.Input.Value()); cmd != "" {
 				return enterCommand(m, cmd)
