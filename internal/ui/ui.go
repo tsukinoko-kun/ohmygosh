@@ -982,4 +982,5 @@ var fullScreenApps = []string{
 	"htop",
 	"btop",
 	"pwsh",
+	"ssh",
 }
